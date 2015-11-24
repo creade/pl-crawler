@@ -1,4 +1,4 @@
-from app import app, db
+from app import create_app, db
 from models import Job, Site_Url, Img_Url
 import json
 from io import StringIO
@@ -8,9 +8,9 @@ from crawler import Crawler
 class CrawlerTests(unittest.TestCase):
 
     def setUp(self):
-        self.app = app.test_client()
-        app.config.from_object("config.TestConfig")
-
+        _app = create_app("config.TestConfig")
+        ctx = _app.test_request_context()
+        ctx.push()
         db.session.commit()
         db.drop_all()
         db.create_all()
@@ -53,8 +53,11 @@ class CrawlerTests(unittest.TestCase):
 class APITest(unittest.TestCase):
 
   def setUp(self):
+    app = create_app("config.TestConfig")
+    ctx = app.test_request_context()
+    ctx.push()
+
     self.app = app.test_client()
-    app.config.from_object("config.TestConfig")
 
     db.session.commit()
     db.drop_all()
@@ -98,8 +101,11 @@ class APITest(unittest.TestCase):
 class ModelTest(unittest.TestCase):
 
   def setUp(self):
-    self.app = app.test_client()
-    app.config.from_object("config.TestConfig")
+    _app = create_app("config.TestConfig")
+    ctx = _app.test_request_context()
+    ctx.push()
+    #
+    # self.app = create_app("config.TestConfig")
 
     db.session.commit()
     db.drop_all()

@@ -1,31 +1,26 @@
 from flask import Flask, request
 from flask.ext.sqlalchemy import SQLAlchemy
-from flask import jsonify
-
+from extensions import (
+    db,
+    migrate,
+)
+from views import blueprint
 import os
-app = Flask(__name__)
-app.config.from_object(os.environ['APP_SETTINGS'])
-db = SQLAlchemy(app)
 
-from models import Job, Site_Url
 
-@app.route("/")
-def ping():
-    return "PING", 200
+def create_app(app_settings):
+    app = Flask(__name__)
+    app.config.from_object(app_settings)
+    register_extensions(app)
+    register_blueprints(app)
+    return app
 
-@app.route("/jobs", methods=['POST'])
-def add_job():
-    site_urls = []
 
-    for url in request.get_json():
-        site_urls.append(Site_Url(url))
+def register_extensions(app):
+    db.init_app(app)
+    migrate.init_app(app, db)
+    return None
 
-    job = Job(site_urls)
-
-    db.session.add(job)
-    db.session.commit()
-
-    return jsonify({"job_id" : job.id}), 202
-
-if __name__ == "__main__":
-    app.run()
+def register_blueprints(app):
+    app.register_blueprint(blueprint)
+    return None
