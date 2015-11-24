@@ -3,6 +3,52 @@ from models import Job, Site_Url, Img_Url
 import json
 from io import StringIO
 import unittest
+from crawler import Crawler
+
+class CrawlerTests(unittest.TestCase):
+
+    def setUp(self):
+        self.app = app.test_client()
+        app.config.from_object("config.TestConfig")
+
+        db.session.commit()
+        db.drop_all()
+        db.create_all()
+
+
+    def test_should_extract_href_from_a_tag(self):
+        site_text = '<a href="http://example.com">text</a>'
+        site_urls = Crawler.extract_site_urls(site_text)
+        self.assertEqual(len(site_urls), 1)
+        self.assertEqual(site_urls[0], "http://example.com")
+
+    def test_should_extract_relative_hrefs_from_a_tag(self):
+        site_text = '<a href="http://example.com">text</a>'
+        site_urls = Crawler.extract_site_urls(site_text)
+        self.assertEqual(len(site_urls), 1)
+        self.assertEqual(site_urls[0], "http://example.com")
+
+    def test_should_extract_hrefs_from_a_tags(self):
+        site_text = '<a href="http://example.com">text</a><a href="http://example2.com">text</a>'
+        site_urls = Crawler.extract_site_urls(site_text)
+        self.assertEqual(len(site_urls), 2)
+
+    def test_should_extract_src_from_img_tag(self):
+        site_text = '<img src="http://example.com/1.png">'
+        img_urls = Crawler.extract_img_urls(site_text)
+        self.assertEqual(len(img_urls), 1)
+        self.assertEqual(img_urls[0], "http://example.com/1.png")
+
+    def test_should_absoulteize_relative_urls(self):
+        url = '1.png'
+        site = "http://example.com"
+        self.assertEqual(Crawler.ensure_absoluteness(url, site), "http://example.com/1.png")
+
+    def test_should_ignore_absoulte_urls(self):
+        url = 'http://example.com/1.png'
+        site = "http://example.com"
+        self.assertEqual(Crawler.ensure_absoluteness(url, site), "http://example.com/1.png")
+
 
 class APITest(unittest.TestCase):
 
