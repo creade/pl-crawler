@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from app import db
+from database import db
 from models import Job, Site_Url
 from flask import jsonify
 
