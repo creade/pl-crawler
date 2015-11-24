@@ -1,15 +1,53 @@
 from app import app, db
 from models import Job, Site_Url, Img_Url
-
+import json
+from io import StringIO
 import unittest
 
 class APITest(unittest.TestCase):
 
+  def setUp(self):
+    self.app = app.test_client()
+    app.config.from_object("config.TestConfig")
+
+    db.session.commit()
+    db.drop_all()
+    db.create_all()
+
+
   def test_should_have_ping_endpoint(self):
-    test_app = app.test_client(self)
-    response = test_app.get('/', content_type='html/text')
+    response = self.app.get('/', content_type='html/text')
     self.assertEqual(response.status_code, 200)
     self.assertEqual(response.data, b"PING")
+
+  def test_should_accept_post_to_job(self):
+    response = self.app.post('/jobs', content_type='application/json', data="[]")
+    self.assertEqual(response.status_code, 202)
+    self.assertEqual(json.loads(response.data.decode()), {"job_id": 1})
+
+    fetched_job = db.session.query(Job).filter_by(id=1).first()
+    self.assertEqual(fetched_job.id, 1)
+
+  def test_should_accept_site_url_in_post_to_job(self):
+    response = self.app.post('/jobs', content_type='application/json', data='["http://example.com"]')
+
+    self.assertEqual(response.status_code, 202)
+    self.assertEqual(json.loads(response.data.decode()), {"job_id": 1})
+
+    fetched_job = db.session.query(Job).filter_by(id=1).first()
+    self.assertEqual(fetched_job.site_urls[0].url, "http://example.com")
+
+  def test_should_accept_site_urls_in_post_to_job(self):
+    response = self.app.post('/jobs', content_type='application/json', data='["http://example.com", "http://example2.com"]')
+
+    self.assertEqual(response.status_code, 202)
+    self.assertEqual(json.loads(response.data.decode()), {"job_id": 1})
+
+    fetched_job = db.session.query(Job).filter_by(id=1).first()
+    self.assertEqual(fetched_job.site_urls[0].url, "http://example.com")
+    self.assertEqual(fetched_job.site_urls[1].url, "http://example2.com")
+
+
 
 class ModelTest(unittest.TestCase):
 
