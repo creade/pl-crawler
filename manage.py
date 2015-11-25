@@ -6,7 +6,7 @@ from models import Job
 from database import db
 
 os_env = os.environ
-app_settings = os_env.get('APP_SETTINGS','config.DevConfig')
+app_settings = os_env.get('APP_SETTINGS','config.ProductionConfig')
 
 app = create_app(app_settings)
 

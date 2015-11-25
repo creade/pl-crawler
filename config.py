@@ -8,9 +8,12 @@ class Config(object):
     SECRET_KEY = os_env.get('PL_CRAWL_SECRET_KEY')
     SQLALCHEMY_DATABASE_URI = os_env.get('DATABASE_URL','postgresql://localhost/pl_crawl')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    
+
 class DevConfig(Config):
     DEBUG = True
+
+class ProductionConfig(Config):
+    DEBUG = False
 
 class TestConfig(Config):
     TESTING = True
