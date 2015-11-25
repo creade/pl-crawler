@@ -193,6 +193,35 @@ class ModelTest(unittest.TestCase):
     self.assertEqual(job.get_status()["inprogress"], 1)
 
 
+  def test_job_should_emit_results_for_all_urls(self):
+    first_site_url = Site_Url("http://example.com")
+    first_img_url = Img_Url("http://example.com/1.png")
+    second_img_url = Img_Url("http://example.com/2.png")
+    third_img_url = Img_Url("http://example.com/3.png")
+
+    first_site_url.img_urls.extend([first_img_url, second_img_url, third_img_url])
+
+    second_site_url = Site_Url("http://example.com/2")
+    fourth_img_url = Img_Url("http://example.com/4.png")
+    second_site_url.img_urls.extend([fourth_img_url])
+
+    job = Job([first_site_url,second_site_url])
+
+    self.assertEqual(job.get_results(), {
+        "id": job.id,
+        "domains":{
+            "http://example.com":[
+                "http://example.com/1.png",
+                "http://example.com/2.png",
+                "http://example.com/3.png"
+            ],
+            "http://example.com/2":[
+                "http://example.com/4.png"
+            ]
+        }
+    })
+
+
 
 
 

@@ -58,13 +58,10 @@ def crawl(url_id, recurse, job_id):
     # fetch img
     img_urls = to_absoulte_urls(url_to_crawl.url, extract_img_urls(site_text))
 
-    # add images to job
-    current_job = db.session.query(Job).filter_by(id=job_id).first()
-
-    current_job.img_urls.extend(list(map(lambda img_url: Img_Url(url = img_url, site_url_id = url_id), img_urls)))
+    # add images to url
+    url_to_crawl.img_urls.extend(list(map(lambda img_url: Img_Url(url = img_url, site_url_id = url_id), img_urls)))
 
     url_to_crawl.crawled = True
 
-    db.session.add(current_job)
     db.session.add(url_to_crawl)
     db.session.commit()

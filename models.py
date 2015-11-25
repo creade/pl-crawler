@@ -19,6 +19,13 @@ class Job(Model):
             "inprogress": len([u for u in self.site_urls if not u.crawled])
         }
 
+    def get_results(self):
+        result = {"id": self.id, "domains":{}}
+        for site in self.site_urls:
+            images_for_site = [u.url for u in site.img_urls]
+            result["domains"][site.url] = images_for_site
+        return result
+
 class Site_Url(Model):
     __tablename__ = 'site_urls'
 

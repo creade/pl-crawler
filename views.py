@@ -40,3 +40,12 @@ def job_status(job_id):
         abort(404)
 
     return jsonify(job.get_status())
+
+@blueprint.route("/jobs/<int:job_id>")
+def job_results(job_id):
+    job = db.session.query(Job).filter_by(id=job_id).first()
+
+    if not job:
+        abort(404)
+
+    return jsonify(job.get_results())
