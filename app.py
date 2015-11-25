@@ -8,7 +8,7 @@ from views import blueprint
 import os
 
 
-def create_app(app_settings):
+def create_app(app_settings="config.ProductionConfig"):
     app = Flask(__name__)
     app.config.from_object(app_settings)
     register_extensions(app)
