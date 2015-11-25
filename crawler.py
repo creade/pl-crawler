@@ -62,5 +62,9 @@ def crawl(url_id, recurse, job_id):
     current_job = db.session.query(Job).filter_by(id=job_id).first()
 
     current_job.img_urls.extend(list(map(lambda img_url: Img_Url(img_url), img_urls)))
+
+    url_to_crawl.crawled = True
+
     db.session.add(current_job)
+    db.session.add(url_to_crawl)
     db.session.commit()

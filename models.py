@@ -20,10 +20,12 @@ class Site_Url(Model):
     id = Column(db.Integer, primary_key=True)
     job_id = Column(db.Integer, db.ForeignKey('jobs.id'), nullable=False)
     url = Column(db.String(2083), unique=False, nullable=False)
+    crawled = Column(db.Boolean, nullable=False)
 
     def __init__(self, url, job_id = None):
         self.url = url
         self.job_id = job_id
+        self.crawled = False
 
 
 class Img_Url(Model):
