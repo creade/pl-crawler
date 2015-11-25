@@ -1,7 +1,7 @@
 import requests
 from models import Site_Url, Img_Url, Job
 from bs4 import BeautifulSoup, SoupStrainer
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, urldefrag
 from database import db
 from rq import Queue
 from rq.job import Job as Reddis_Job
@@ -10,23 +10,22 @@ from worker import conn
 q = Queue(connection=conn)
 
 def extract_site_urls(site_text):
-    site_urls = []
+    site_urls = set()
     only_a_tags = SoupStrainer("a")
     for link in BeautifulSoup(site_text, "html.parser", parse_only=only_a_tags):
-        if link.has_attr('href'):
-            site_urls.append(link["href"])
-    return site_urls
+        if link.has_attr('href') and urlparse(link["href"]).scheme not in ["", "mailto"]:
+            site_urls.add(urldefrag(link["href"])[0])
+    return list(site_urls)
 
 def extract_img_urls(site_text):
-    img_urls = []
+    img_urls = set()
     only_img_tags = SoupStrainer("img")
     for img in BeautifulSoup(site_text, "html.parser", parse_only=only_img_tags):
         if img.has_attr('src'):
-            img_urls.append(img["src"])
-    return img_urls
+            img_urls.add(img["src"])
+    return list(img_urls)
 
 def ensure_absoluteness(url, site):
-
     parsed_url = urlparse(url)
     if parsed_url.netloc == '':
         return urljoin(site, url)
@@ -60,7 +59,6 @@ def crawl(url_id, recurse, job_id):
 
     # add images to url
     url_to_crawl.img_urls.extend(list(map(lambda img_url: Img_Url(url = img_url, site_url_id = url_id), img_urls)))
-
     url_to_crawl.crawled = True
 
     db.session.add(url_to_crawl)

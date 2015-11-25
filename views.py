@@ -41,7 +41,7 @@ def job_status(job_id):
 
     return jsonify(job.get_status())
 
-@blueprint.route("/jobs/<int:job_id>")
+@blueprint.route("/jobs/<int:job_id>/")
 def job_results(job_id):
     job = db.session.query(Job).filter_by(id=job_id).first()
 

@@ -33,6 +33,16 @@ class CrawlerTests(unittest.TestCase):
         site_urls = extract_site_urls(site_text)
         self.assertEqual(len(site_urls), 2)
 
+    def test_should_ignore_duplicate_links(self):
+        site_text = '<a href="http://example2.com/index.html">text</a><a href="http://example2.com/index.html">text</a>'
+        site_urls = extract_site_urls(site_text)
+        self.assertEqual(len(site_urls), 1)
+
+    def test_should_ignore_duplicate_links_that_are_page_anchors(self):
+        site_text = '<a href="http://example2.com/index.html">text</a><a href="http://example2.com/index.html#anchor">text</a>'
+        site_urls = extract_site_urls(site_text)
+        self.assertEqual(len(site_urls), 1)
+
     def test_should_extract_src_from_img_tag(self):
         site_text = '<img src="http://example.com/1.png">'
         img_urls = extract_img_urls(site_text)
@@ -49,6 +59,15 @@ class CrawlerTests(unittest.TestCase):
         site = "http://example.com"
         self.assertEqual(ensure_absoluteness(url, site), "http://example.com/1.png")
 
+    def test_should_handle_webm_link(self):
+        site_text = '<a href="//upload.wikimedia.org/wikipedia/commons/4/4e/Plasma_globe_23s.webm" title="Play media" target="new"><span class="play-btn-large"><span class="mw-tmh-playtext">Play media</span></span></a>'
+        img_urls = extract_site_urls(site_text)
+        self.assertEqual(len(img_urls), 0)
+
+    def test_should_not_follow_mailtos(self):
+        site_text = '<a href="mailto:contact@postlight.com">contact@postlight.com</a>'
+        img_urls = extract_site_urls(site_text)
+        self.assertEqual(len(img_urls), 0)
 
 class APITest(unittest.TestCase):
 
