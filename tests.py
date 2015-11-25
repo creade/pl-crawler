@@ -135,26 +135,30 @@ class ModelTest(unittest.TestCase):
 
     self.assertEqual(len(fetched_job.site_urls), 1)
 
-  def test_job_should_have_img_urls(self):
+  def test_site_url_should_have_img_urls(self):
+    first_site_url = Site_Url("http://example.com")
     first_img_url = Img_Url("http://example.com/1.png")
-    job = Job([])
-    job.img_urls.append(first_img_url)
+    first_site_url.img_urls.append(first_img_url)
+    job = Job([first_site_url])
+
     db.session.add(job)
     db.session.commit()
 
     fetched_job = db.session.query(Job).filter_by(id=job.id).first()
 
-    self.assertEqual(len(fetched_job.img_urls), 1)
+    self.assertEqual(len(fetched_job.site_urls[0].img_urls), 1)
 
 
-  def test_img_urls_should_have_backref_to_job(self):
+  def test_img_urls_should_have_backref_to_site_url(self):
+    first_site_url = Site_Url("http://example.com")
     first_img_url = Img_Url("http://example.com/1.png")
-    job = Job([])
-    job.img_urls.append(first_img_url)
+    first_site_url.img_urls.append(first_img_url)
+    job = Job([first_site_url])
+
     db.session.add(job)
     db.session.commit()
 
-    self.assertEqual(first_img_url.job_id, job.id)
+    self.assertEqual(first_img_url.site_url.id, first_site_url.id)
 
   def test_site_urls_should_have_backref_to_job(self):
     first_site_url = Site_Url("http://example.com")
@@ -162,7 +166,7 @@ class ModelTest(unittest.TestCase):
     db.session.add(job)
     db.session.commit()
 
-    self.assertEqual(first_site_url.job_id, job.id)
+    self.assertEqual(first_site_url.job.id, job.id)
 
 
   def test_job_should_emit_status_for_uncrawled_urls(self):
