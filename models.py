@@ -8,31 +8,31 @@ class Job(Model):
     __tablename__ = 'jobs'
 
     id = Column(db.Integer, primary_key=True)
-    site_urls = relationship("Site_Url", backref="job")
+    domains = relationship("Domain", backref="job")
 
-    def __init__(self, site_urls):
-        self.site_urls = site_urls
+    def __init__(self, domains):
+        self.domains = domains
 
     def get_status(self):
         return {
-            "completed": len([u for u in self.site_urls if u.crawled]),
-            "inprogress": len([u for u in self.site_urls if not u.crawled])
+            "completed": len([u for u in self.domains if u.crawled]),
+            "inprogress": len([u for u in self.domains if not u.crawled])
         }
 
     def get_results(self):
         result = {"id": self.id, "domains":{}}
-        for site in self.site_urls:
-            images_for_site = [u.url for u in site.img_urls]
-            result["domains"][site.url] = images_for_site
+        for domain in self.domains:
+            images_for_site = [u.url for u in domain.images]
+            result["domains"][domain.url] = images_for_site
         return result
 
-class Site_Url(Model):
-    __tablename__ = 'site_urls'
+class Domain(Model):
+    __tablename__ = 'domains'
 
     id = Column(db.Integer, primary_key=True)
     job_id = Column(db.Integer, db.ForeignKey('jobs.id'), nullable=False)
     url = Column(db.String(2083), unique=False, nullable=False)
-    img_urls = relationship("Img_Url", backref="site_url")
+    images = relationship("Image", backref="domain")
     crawled = Column(db.Boolean, nullable=False)
 
     def __init__(self, url, job_id = None):
@@ -41,13 +41,13 @@ class Site_Url(Model):
         self.crawled = False
 
 
-class Img_Url(Model):
-    __tablename__ = 'img_urls'
+class Image(Model):
+    __tablename__ = 'images'
 
     id = Column(db.Integer, primary_key=True)
-    site_url_id = Column(db.Integer, db.ForeignKey('site_urls.id'), nullable=False)
+    domain_id = Column(db.Integer, db.ForeignKey('domains.id'), nullable=False)
     url = Column(db.String(2083), unique=False, nullable=False)
 
-    def __init__(self, url, site_url_id = None):
+    def __init__(self, url, domain_id = None):
         self.url = url
-        self.site_url_id = site_url_id
+        self.domain_id = domain_id

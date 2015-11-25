@@ -1,6 +1,6 @@
 from flask import Blueprint, request, abort
 from database import db
-from models import Job, Site_Url
+from models import Job, Domain
 from flask import jsonify
 from rq import Queue
 from rq.job import Job as Reddis_Job
@@ -15,17 +15,17 @@ def ping():
 
 @blueprint.route("/jobs", methods=['POST'])
 def add_job():
-    site_urls = []
+    domains = []
 
     for url in request.get_json():
-        site_urls.append(Site_Url(url))
+        domains.append(Domain(url))
 
-    job = Job(site_urls)
+    job = Job(domains)
 
     db.session.add(job)
     db.session.commit()
 
-    for url in job.site_urls:
+    for url in job.domains:
         reddis_job = q.enqueue_call(
             func="crawler.crawl", args=[url.id, True, job.id], result_ttl=5000
         )

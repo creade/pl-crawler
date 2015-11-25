@@ -1,9 +1,9 @@
 from app import create_app, db
-from models import Job, Site_Url, Img_Url
+from models import Job, Domain, Image
 import json
 from io import StringIO
 import unittest
-from crawler import extract_site_urls,ensure_absoluteness, extract_img_urls
+from crawler import extract_domains,ensure_absoluteness, extract_images
 
 class CrawlerTests(unittest.TestCase):
 
@@ -18,36 +18,36 @@ class CrawlerTests(unittest.TestCase):
 
     def test_should_extract_href_from_a_tag(self):
         site_text = '<a href="http://example.com">text</a>'
-        site_urls = extract_site_urls(site_text)
-        self.assertEqual(len(site_urls), 1)
-        self.assertEqual(site_urls[0], "http://example.com")
+        domains = extract_domains(site_text)
+        self.assertEqual(len(domains), 1)
+        self.assertEqual(domains[0], "http://example.com")
 
     def test_should_extract_relative_hrefs_from_a_tag(self):
         site_text = '<a href="http://example.com">text</a>'
-        site_urls = extract_site_urls(site_text)
-        self.assertEqual(len(site_urls), 1)
-        self.assertEqual(site_urls[0], "http://example.com")
+        domains = extract_domains(site_text)
+        self.assertEqual(len(domains), 1)
+        self.assertEqual(domains[0], "http://example.com")
 
     def test_should_extract_hrefs_from_a_tags(self):
         site_text = '<a href="http://example.com">text</a><a href="http://example2.com">text</a>'
-        site_urls = extract_site_urls(site_text)
-        self.assertEqual(len(site_urls), 2)
+        domains = extract_domains(site_text)
+        self.assertEqual(len(domains), 2)
 
     def test_should_ignore_duplicate_links(self):
         site_text = '<a href="http://example2.com/index.html">text</a><a href="http://example2.com/index.html">text</a>'
-        site_urls = extract_site_urls(site_text)
-        self.assertEqual(len(site_urls), 1)
+        domains = extract_domains(site_text)
+        self.assertEqual(len(domains), 1)
 
     def test_should_ignore_duplicate_links_that_are_page_anchors(self):
         site_text = '<a href="http://example2.com/index.html">text</a><a href="http://example2.com/index.html#anchor">text</a>'
-        site_urls = extract_site_urls(site_text)
-        self.assertEqual(len(site_urls), 1)
+        domains = extract_domains(site_text)
+        self.assertEqual(len(domains), 1)
 
     def test_should_extract_src_from_img_tag(self):
         site_text = '<img src="http://example.com/1.png">'
-        img_urls = extract_img_urls(site_text)
-        self.assertEqual(len(img_urls), 1)
-        self.assertEqual(img_urls[0], "http://example.com/1.png")
+        images = extract_images(site_text)
+        self.assertEqual(len(images), 1)
+        self.assertEqual(images[0], "http://example.com/1.png")
 
     def test_should_absoulteize_relative_urls(self):
         url = '1.png'
@@ -61,13 +61,13 @@ class CrawlerTests(unittest.TestCase):
 
     def test_should_handle_webm_link(self):
         site_text = '<a href="//upload.wikimedia.org/wikipedia/commons/4/4e/Plasma_globe_23s.webm" title="Play media" target="new"><span class="play-btn-large"><span class="mw-tmh-playtext">Play media</span></span></a>'
-        img_urls = extract_site_urls(site_text)
-        self.assertEqual(len(img_urls), 0)
+        images = extract_domains(site_text)
+        self.assertEqual(len(images), 0)
 
     def test_should_not_follow_mailtos(self):
         site_text = '<a href="mailto:contact@postlight.com">contact@postlight.com</a>'
-        img_urls = extract_site_urls(site_text)
-        self.assertEqual(len(img_urls), 0)
+        images = extract_domains(site_text)
+        self.assertEqual(len(images), 0)
 
 class APITest(unittest.TestCase):
 
@@ -96,24 +96,24 @@ class APITest(unittest.TestCase):
     fetched_job = db.session.query(Job).filter_by(id=1).first()
     self.assertEqual(fetched_job.id, 1)
 
-  def test_should_accept_site_url_in_post_to_job(self):
+  def test_should_accept_domain_in_post_to_job(self):
     response = self.app.post('/jobs', content_type='application/json', data='["http://example.com"]')
 
     self.assertEqual(response.status_code, 202)
     self.assertEqual(json.loads(response.data.decode()), {"job_id": 1})
 
     fetched_job = db.session.query(Job).filter_by(id=1).first()
-    self.assertEqual(fetched_job.site_urls[0].url, "http://example.com")
+    self.assertEqual(fetched_job.domains[0].url, "http://example.com")
 
-  def test_should_accept_site_urls_in_post_to_job(self):
+  def test_should_accept_domains_in_post_to_job(self):
     response = self.app.post('/jobs', content_type='application/json', data='["http://example.com", "http://example2.com"]')
 
     self.assertEqual(response.status_code, 202)
     self.assertEqual(json.loads(response.data.decode()), {"job_id": 1})
 
     fetched_job = db.session.query(Job).filter_by(id=1).first()
-    self.assertEqual(fetched_job.site_urls[0].url, "http://example.com")
-    self.assertEqual(fetched_job.site_urls[1].url, "http://example2.com")
+    self.assertEqual(fetched_job.domains[0].url, "http://example.com")
+    self.assertEqual(fetched_job.domains[1].url, "http://example2.com")
 
   def test_should_expose_job_status(self):
     self.app.post('/jobs', content_type='application/json', data='["http://example.com", "http://example2.com"]')
@@ -144,87 +144,87 @@ class ModelTest(unittest.TestCase):
     fetched_job = db.session.query(Job).filter_by(id=job_id).first()
     self.assertEqual(fetched_job.id, job_id)
 
-  def test_job_should_have_site_urls(self):
-    first_site_url = Site_Url("http://example.com")
-    job = Job([first_site_url])
+  def test_job_should_have_domains(self):
+    first_domain = Domain("http://example.com")
+    job = Job([first_domain])
     db.session.add(job)
     db.session.commit()
 
     fetched_job = db.session.query(Job).filter_by(id=job.id).first()
 
-    self.assertEqual(len(fetched_job.site_urls), 1)
+    self.assertEqual(len(fetched_job.domains), 1)
 
-  def test_site_url_should_have_img_urls(self):
-    first_site_url = Site_Url("http://example.com")
-    first_img_url = Img_Url("http://example.com/1.png")
-    first_site_url.img_urls.append(first_img_url)
-    job = Job([first_site_url])
+  def test_domain_should_have_images(self):
+    first_domain = Domain("http://example.com")
+    first_img_url = Image("http://example.com/1.png")
+    first_domain.images.append(first_img_url)
+    job = Job([first_domain])
 
     db.session.add(job)
     db.session.commit()
 
     fetched_job = db.session.query(Job).filter_by(id=job.id).first()
 
-    self.assertEqual(len(fetched_job.site_urls[0].img_urls), 1)
+    self.assertEqual(len(fetched_job.domains[0].images), 1)
 
 
-  def test_img_urls_should_have_backref_to_site_url(self):
-    first_site_url = Site_Url("http://example.com")
-    first_img_url = Img_Url("http://example.com/1.png")
-    first_site_url.img_urls.append(first_img_url)
-    job = Job([first_site_url])
+  def test_images_should_have_backref_to_domain(self):
+    first_domain = Domain("http://example.com")
+    first_img_url = Image("http://example.com/1.png")
+    first_domain.images.append(first_img_url)
+    job = Job([first_domain])
 
     db.session.add(job)
     db.session.commit()
 
-    self.assertEqual(first_img_url.site_url.id, first_site_url.id)
+    self.assertEqual(first_img_url.domain.id, first_domain.id)
 
-  def test_site_urls_should_have_backref_to_job(self):
-    first_site_url = Site_Url("http://example.com")
-    job = Job([first_site_url])
+  def test_domains_should_have_backref_to_job(self):
+    first_domain = Domain("http://example.com")
+    job = Job([first_domain])
     db.session.add(job)
     db.session.commit()
 
-    self.assertEqual(first_site_url.job.id, job.id)
+    self.assertEqual(first_domain.job.id, job.id)
 
 
   def test_job_should_emit_status_for_uncrawled_urls(self):
-    first_site_url = Site_Url("http://example.com")
-    second_site_url = Site_Url("http://example.com/2")
-    job = Job([first_site_url,second_site_url])
+    first_domain = Domain("http://example.com")
+    second_domain = Domain("http://example.com/2")
+    job = Job([first_domain,second_domain])
 
     self.assertEqual(job.get_status()["inprogress"], 2)
 
   def test_job_should_emit_status_for_crawled_urls(self):
-    first_site_url = Site_Url("http://example.com")
-    first_site_url.crawled = True
-    job = Job([first_site_url])
+    first_domain = Domain("http://example.com")
+    first_domain.crawled = True
+    job = Job([first_domain])
 
     self.assertEqual(job.get_status()["completed"], 1)
 
   def test_job_should_emit_status_for_all_urls(self):
-    first_site_url = Site_Url("http://example.com")
-    first_site_url.crawled = True
-    second_site_url = Site_Url("http://example.com/2")
-    job = Job([first_site_url,second_site_url])
+    first_domain = Domain("http://example.com")
+    first_domain.crawled = True
+    second_domain = Domain("http://example.com/2")
+    job = Job([first_domain,second_domain])
 
     self.assertEqual(job.get_status()["completed"], 1)
     self.assertEqual(job.get_status()["inprogress"], 1)
 
 
   def test_job_should_emit_results_for_all_urls(self):
-    first_site_url = Site_Url("http://example.com")
-    first_img_url = Img_Url("http://example.com/1.png")
-    second_img_url = Img_Url("http://example.com/2.png")
-    third_img_url = Img_Url("http://example.com/3.png")
+    first_domain = Domain("http://example.com")
+    first_img_url = Image("http://example.com/1.png")
+    second_img_url = Image("http://example.com/2.png")
+    third_img_url = Image("http://example.com/3.png")
 
-    first_site_url.img_urls.extend([first_img_url, second_img_url, third_img_url])
+    first_domain.images.extend([first_img_url, second_img_url, third_img_url])
 
-    second_site_url = Site_Url("http://example.com/2")
-    fourth_img_url = Img_Url("http://example.com/4.png")
-    second_site_url.img_urls.extend([fourth_img_url])
+    second_domain = Domain("http://example.com/2")
+    fourth_img_url = Image("http://example.com/4.png")
+    second_domain.images.extend([fourth_img_url])
 
-    job = Job([first_site_url,second_site_url])
+    job = Job([first_domain,second_domain])
 
     self.assertEqual(job.get_results(), {
         "id": job.id,
