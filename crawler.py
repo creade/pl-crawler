@@ -33,26 +33,34 @@ def ensure_absoluteness(url, site):
     else:
         return url
 
-def crawl(url_to_crawl, recurse, job_id):
-    site_text = requests.get(url_to_crawl).text
+def to_absoulte_urls(url_being_crawled, urls):
+    return list(map(lambda url_to_check: ensure_absoluteness(url_to_check, url_being_crawled), urls))
+
+def crawl(url_id, recurse, job_id):
+    url_to_crawl = db.session.query(Site_Url).filter_by(id=url_id).first()
+    site_text = requests.get(url_to_crawl.url).text
     urls_to_crawl_next = []
     img_urls = []
     if recurse:
         # fetch links
-        urls_to_crawl_next = list(map(lambda url_to_check: Site_Url(ensure_absoluteness(url_to_check, url_to_crawl)), extract_site_urls(site_text)))
+        urls_to_crawl_next = to_absoulte_urls(url_to_crawl.url, extract_site_urls(site_text))
         # enqueue links as non recursed
+
         for url_to_crawl_next in urls_to_crawl_next:
+            new_url_to_crawl = Site_Url(url = url_to_crawl_next, job_id = job_id)
+            db.session.add(new_url_to_crawl)
+            db.session.commit()
+
             reddis_job = q.enqueue_call(
-                func=crawl, args=(url_to_crawl_next.url,False,job_id), result_ttl=5000
+                func=crawl, args=(new_url_to_crawl.id,False,job_id), result_ttl=5000
             )
-        print(urls_to_crawl_next)
+
     # fetch img
-    img_urls = list(map(lambda url_to_check: Img_Url(ensure_absoluteness(url_to_check, url_to_crawl)), extract_img_urls(site_text)))
+    img_urls = to_absoulte_urls(url_to_crawl.url, extract_img_urls(site_text))
 
     # add images to job
     current_job = db.session.query(Job).filter_by(id=job_id).first()
 
-    current_job.site_urls.extend(urls_to_crawl_next)
-    current_job.img_urls.extend(img_urls)
+    current_job.img_urls.extend(list(map(lambda img_url: Img_Url(img_url), img_urls)))
     db.session.add(current_job)
     db.session.commit()

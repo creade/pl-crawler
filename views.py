@@ -27,7 +27,7 @@ def add_job():
 
     for url in job.site_urls:
         reddis_job = q.enqueue_call(
-            func="crawler.crawl", args=[url.url, True, job.id], result_ttl=5000
+            func="crawler.crawl", args=[url.id, True, job.id], result_ttl=5000
         )
 
     return jsonify({"job_id" : job.id}), 202
