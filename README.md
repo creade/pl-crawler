@@ -27,8 +27,8 @@ unit testing difficult. It sounds like rq has some functionality with SimpleWork
 may have made this easier.
 + I'm not 100% confident about the behavior of the app as the number of workers
 scale.
-+ Error handling is weak in the present state. In particular, I'm being a bad
-Postel's law adherent by failing if input domains aren't fully formed.
++ Error handling could be more robust in the present state. Errors during the crawl
+stage in particular are being swallowed.
 
 My next steps would be:
 + That gal-danged javascript seems to severely complicate web crawling. Sites like

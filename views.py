@@ -2,6 +2,7 @@ from flask import Blueprint, request, abort
 from database import db
 from models import Job, Domain
 from flask import jsonify
+from urllib.parse import urlparse
 from rq import Queue
 from rq.job import Job as Reddis_Job
 from worker import conn
@@ -18,7 +19,10 @@ def add_job():
     domains = []
 
     for url in request.get_json():
-        domains.append(Domain(url))
+        if urlparse(url).scheme not in ["", "mailto"]:
+            domains.append(Domain(url))
+        else:
+            return jsonify({"error": "Invalid Url"}), 400
 
     job = Job(domains)
 

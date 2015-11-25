@@ -105,6 +105,12 @@ class APITest(unittest.TestCase):
     fetched_job = db.session.query(Job).filter_by(id=1).first()
     self.assertEqual(fetched_job.domains[0].url, "http://example.com")
 
+  def test_should_reject_domain_without_protocol_in_post_to_job(self):
+    response = self.app.post('/jobs', content_type='application/json', data='["example.com"]')
+
+    self.assertEqual(response.status_code, 400)
+    self.assertEqual(json.loads(response.data.decode()), {"error": "Invalid Url"})
+
   def test_should_accept_domains_in_post_to_job(self):
     response = self.app.post('/jobs', content_type='application/json', data='["http://example.com", "http://example2.com"]')
 
