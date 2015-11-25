@@ -3,7 +3,7 @@ from models import Job, Site_Url, Img_Url
 import json
 from io import StringIO
 import unittest
-from crawler import extract_site_urls,ensure_absoluteness
+from crawler import extract_site_urls,ensure_absoluteness, extract_img_urls
 
 class CrawlerTests(unittest.TestCase):
 
@@ -96,6 +96,12 @@ class APITest(unittest.TestCase):
     self.assertEqual(fetched_job.site_urls[0].url, "http://example.com")
     self.assertEqual(fetched_job.site_urls[1].url, "http://example2.com")
 
+  def test_should_expose_job_status(self):
+    self.app.post('/jobs', content_type='application/json', data='["http://example.com", "http://example2.com"]')
+
+    response = self.app.get('/jobs/1/status')
+    status = json.loads(response.data.decode())
+    self.assertEqual(status["inprogress"] + status["completed"], 2)
 
 class ModelTest(unittest.TestCase):
 
@@ -157,6 +163,32 @@ class ModelTest(unittest.TestCase):
     db.session.commit()
 
     self.assertEqual(first_site_url.job_id, job.id)
+
+
+  def test_job_should_emit_status_for_uncrawled_urls(self):
+    first_site_url = Site_Url("http://example.com")
+    second_site_url = Site_Url("http://example.com/2")
+    job = Job([first_site_url,second_site_url])
+
+    self.assertEqual(job.get_status()["inprogress"], 2)
+
+  def test_job_should_emit_status_for_crawled_urls(self):
+    first_site_url = Site_Url("http://example.com")
+    first_site_url.crawled = True
+    job = Job([first_site_url])
+
+    self.assertEqual(job.get_status()["completed"], 1)
+
+  def test_job_should_emit_status_for_all_urls(self):
+    first_site_url = Site_Url("http://example.com")
+    first_site_url.crawled = True
+    second_site_url = Site_Url("http://example.com/2")
+    job = Job([first_site_url,second_site_url])
+
+    self.assertEqual(job.get_status()["completed"], 1)
+    self.assertEqual(job.get_status()["inprogress"], 1)
+
+
 
 
 

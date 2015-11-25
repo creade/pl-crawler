@@ -14,6 +14,12 @@ class Job(Model):
     def __init__(self, site_urls):
         self.site_urls = site_urls
 
+    def get_status(self):
+        return {
+            "completed": len([u for u in self.site_urls if u.crawled]),
+            "inprogress": len([u for u in self.site_urls if not u.crawled])
+        }
+
 class Site_Url(Model):
     __tablename__ = 'site_urls'
 

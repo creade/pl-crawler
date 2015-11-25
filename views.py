@@ -1,4 +1,4 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, abort
 from database import db
 from models import Job, Site_Url
 from flask import jsonify
@@ -31,3 +31,12 @@ def add_job():
         )
 
     return jsonify({"job_id" : job.id}), 202
+
+@blueprint.route("/jobs/<int:job_id>/status")
+def job_status(job_id):
+    job = db.session.query(Job).filter_by(id=job_id).first()
+
+    if not job:
+        abort(404)
+
+    return jsonify(job.get_status())
